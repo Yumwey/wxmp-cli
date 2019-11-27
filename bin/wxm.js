@@ -2,42 +2,17 @@
 
 const cmder = require('commander')
 const chalk = require('chalk')
+const path = require('path')
 const inquirer = require('inquirer')
-
-cmder.version('1.0.0')
+const init = require('../lib/init')
+ 
+cmder.version('1.0.0', '-v,--version')
   .option('-i, --init', 'init a wx app')
   .action(cmd => {
     if (cmd.init) {
-      inquirer.prompt([{
-        type: 'input',
-        name: 'name:',
-        message: `What's the name of your project?`,
-        default() {
-          return 'my-wxapp'
-        }
-      },{
-        type: 'list',
-        name: 'type',
-        message: `What kind of project do you need?`,
-        choices: [
-          chalk.blue('simple -- (Common template)'),
-          chalk.red('complex -- (Includes engineering flow tools, such as mobx,sass,mock etc...)')
-        ]
-      }]).then(answers => {
-        console.log(answers)
-        
+      init().then(res => {
+        console.log(res['name'])
       })
-    }
-    if (cmd.type) {
-      inquirer.prompt([{
-        type: 'expand',
-        name: 'type',
-        message: '选择你的项目类型',
-        choices: [{
-          key: 's',
-          message: 's'
-        }]
-      }])
     }
   })
 

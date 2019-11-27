@@ -13,6 +13,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "commander": "^2.20.0"
+    "chalk": "^3.0.0",
+    "commander": "^2.20.0",
+    "inquirer": "^7.0.0",
+    "shelljs": "^0.8.3"
+  },
+  "devDependencies": {
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2"
   }
 }
