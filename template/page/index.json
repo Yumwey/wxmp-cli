@@ -1,0 +1,9 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/history/index"
+  ],
+  "window": {
+    "test": 1
+  }
+}
