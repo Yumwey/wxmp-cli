@@ -18,10 +18,9 @@ cmder.version('1.0.0', '-v, --version')
   .action(cmd => {
     if (cmd.init) {
       init().then(async res => {
-        // console.log(res.name)
         const spin = ora(`downloading ${res.type}`).start()
         let bar
-        const stream = await got.stream('https://github.com/Yumwey/wxmp-cli/releases/download/0.0.1/simple.tgz')
+        const stream = await got.stream(`https://github.com/Yumwey/wxmp-cli/releases/download/0.0.1/${res.type}.tgz`)
           .on('downloadProgress', (progress) => {
              console.chalk(chalk.white(`${progress.percent / progress.total}`))
           })
