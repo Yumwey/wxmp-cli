@@ -10,8 +10,8 @@ const tar = require('tar')
 const fs = require('fs')
 const ora = require('ora')
 const shell = require('shelljs')
-const { isExist, cwd, log } = require('../lib/util')
-const day = require('dayjs')
+const { isExist, cwd, log, getTemp } = require('../lib/util')
+
 
 cmder.version('1.0.0', '-v, --version')
   .option('-i, --init', 'init a wx app')
@@ -21,9 +21,9 @@ cmder.version('1.0.0', '-v, --version')
         // console.log(res.name)
         const spin = ora(`downloading ${res.type}`).start()
         let bar
-        const stream = await got.stream('https://github.com/Yumwey/wxmp-cli/releases/download/1/test.tgz')
+        const stream = await got.stream('https://github.com/Yumwey/wxmp-cli/releases/download/0.0.1/simple.tgz')
           .on('downloadProgress', (progress) => {
-             
+             console.chalk(chalk.white(`${progress.percent / progress.total}`))
           })
           fs.mkdirSync(path.join(cwd(), res.name))
           stream.pipe(tar.x({
@@ -37,48 +37,70 @@ cmder.version('1.0.0', '-v, --version')
       })
     }
   })
-  .option('-p, --page <pageName>', 'create a page')
+  .option('-p, --page <page name>', 'create a page')
   .action(cmd => {
     if (cmd.page) {
         inquirer.prompt([{
           type: 'input',
           name: 'desc',
-          message: `input page description?`,
+          message: `input page description. (default: empty):`,
           default() {
             return ''
           }
-        }
-      ]).then(answer => {
-        const createPageDirPath = path.join(cwd(), cmd.page)
-        if (isExist(createPageDirPath)) {
-          log.error(`Page "${cmd.page}" already exsited in this folder!`)
-        } else {
-          fs.mkdirSync(createPageDirPath)
-          shell.cp('-R', path.join(__dirname, '../template/page/*'), createPageDirPath)
-          shell.cd(createPageDirPath)
-          shell.ls('*.js').forEach(file => {
-            shell.sed('-i', 'TIME_STAMP', day().format('YYYY-MM-DD HH:mm:ss'), file)
-            shell.sed('-i', 'DESC', answer.desc, file)
-            const gitUserName = shell.exec('git config --get user.name', { silent:true }).stdout
-            if (gitUserName) {
-              shell.sed('-i', 'AUTHOR', gitUserName, file)
+        },
+        {
+          type: 'input',
+          name: 'addRoute',
+          message: `do you need add route? only support main page (default: N) [Y/N]:`,
+          default() {
+            return 'N'
+          },
+          validate(val) {
+            const parentPath = path.join(cwd(), '../')
+            if (isExist(path.join(parentPath, 'app.json'))) {
+              return ['y', 'n', 'yes', 'no'].includes(val.toLowerCase())
+            } else {
+              log.error(`There is no app.json file in the current folder`)
+              return false
             }
-          })
-          shell.cd('..')
+          }
         }
+      ]).then(answer => { 
+        getTemp('page', cmd.page, answer, () => {
+          shell.cd('../../')
+          const lowerAnswer = answer.addRoute.toLowerCase()
+          if (lowerAnswer === 'y' || lowerAnswer === 'yes') {
+            if (isExist('app.json')) {
+              const fileString = fs.readFileSync('app.json', 'utf-8')
+              const newString = fileString.trim().replace(/"pages":\s*\[([^\]]*)],/g, (s,v) => {
+                // 只支持主包输出路由
+                return `"pages": [${v},\n   "pages/${cmd.page}/index"\n   ],`
+              })
+              fs.writeFileSync('app.json', newString)
+            }
+          }
+        }) 
       })
     }
   })
-  .option('-t')
+  .option('-c, --comp <component name>', 'create a component')
   .action(cmd => {
-    shell.ls('*.json').forEach(file => {
-      let routeString = null
-      const fileString = fs.readFileSync(file, 'utf-8')
-      fileString.trim().replace(/"pages":\s*\[([^\]]*)],/g, (s,v) => {
-        routeString = v
+    if (cmd.comp) {
+      inquirer.prompt([{
+        type: 'input',
+        name: 'desc',
+        message: `input component description. (default: empty):`,
+        default() {
+          return ''
+        }
+      }]).then(answer => {
+        if (cwd().includes('components')) {
+          getTemp('component', cmd.comp, answer)
+        } else {
+          log.warn(`this isn't a component folder!`)
+        }
       })
-      console.log(routeString)
-    })
+    }
   })
 
 cmder.on('-h', () => {
